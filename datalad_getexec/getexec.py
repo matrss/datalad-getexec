@@ -1,6 +1,6 @@
 """DataLad getexec command"""
 
-__docformat__ = 'restructuredtext'
+__docformat__ = "restructuredtext"
 
 from datalad.interface.base import Interface
 from datalad.interface.base import build_doc
@@ -10,7 +10,8 @@ from datalad.interface.base import eval_results
 from datalad.interface.results import get_status_dict
 
 import logging
-lgr = logging.getLogger('datalad.getexec.getexec')
+
+lgr = logging.getLogger("datalad.getexec.getexec")
 
 
 @build_doc
@@ -20,15 +21,12 @@ class GetExec(Interface):
     Long description of arbitrary volume.
     """
 
-    _params_ = dict(
-    )
+    _params_ = dict()
 
     @staticmethod
-    @datasetmethod(name='getexec')
+    @datasetmethod(name="getexec")
     @eval_results
     def __call__():
         raise NotImplementedError()
 
-        yield get_status_dict(
-            action='getexec',
-            status='ok')
+        yield get_status_dict(action="getexec", status="ok")

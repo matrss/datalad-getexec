@@ -1,9 +1,10 @@
 """DataLad getexec extension"""
 
-__docformat__ = 'restructuredtext'
+__docformat__ = "restructuredtext"
 
 import logging
-lgr = logging.getLogger('datalad.getexec')
+
+lgr = logging.getLogger("datalad.getexec")
 
 # Defines a datalad command suite.
 # This variable must be bound as a setuptools entrypoint
@@ -15,16 +16,17 @@ command_suite = (
         # specification of a command, any number of commands can be defined
         (
             # importable module that contains the command implementation
-            'datalad_getexec.getexec',
+            "datalad_getexec.getexec",
             # name of the command class implementation in above module
-            'GetExec',
+            "GetExec",
             # optional name of the command in the cmdline API
-            'getexec',
+            "getexec",
             # optional name of the command in the Python API
-            'getexec'
+            "getexec",
         ),
-    ]
+    ],
 )
 
 from . import _version
-__version__ = _version.get_versions()['version']
+
+__version__ = _version.get_versions()["version"]
