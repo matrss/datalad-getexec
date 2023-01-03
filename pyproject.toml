@@ -1,2 +1,12 @@
 [build-system]
 requires = ["setuptools >= 43.0.0", "wheel"]
+
+[tool.black]
+line-length = 88
+extend-exclude = '''
+(
+  ^/_datalad_buildsupport
+  | ^/versioneer.py
+  | ^/datalad_getexec/_version.py
+)
+'''
