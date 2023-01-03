@@ -25,14 +25,14 @@ template](https://github.com/datalad/datalad-extension-template/generate), and
 adjust as necessary. A good approach is to
 
 - Pick a name for the new extension.
-- Look through the sources and replace `helloworld` with
-  `<newname>` (hint: `git grep helloworld` should find all
+- Look through the sources and replace `getexec` with
+  `<newname>` (hint: `git grep getexec` should find all
   spots).
-- Delete the example command implementation in `datalad_helloworld/hello_cmd.py`.
+- Delete the example command implementation in `datalad_getexec/hello_cmd.py`.
 - Implement a new command, and adjust the `command_suite` in
-  `datalad_helloworld/__init__.py` to point to it.
+  `datalad_getexec/__init__.py` to point to it.
 - Replace `hello_cmd` with the name of the new command in
-  `datalad_helloworld/tests/test_register.py` to automatically test whether the
+  `datalad_getexec/tests/test_register.py` to automatically test whether the
   new extension installs correctly.
 - Adjust the documentation in `docs/source/index.rst`. Refer to [`docs/README.md`](docs/README.md) for more information on documentation building, testing and publishing.
 - Replace this README, and/or update the links in the badges at the top.
