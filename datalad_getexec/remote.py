@@ -1,9 +1,7 @@
-import base64
 import inspect
 import json
 import logging
 import subprocess
-import urllib.parse
 
 from annexremote import Master, RemoteError, SpecialRemote
 
@@ -18,7 +16,8 @@ class GetExecRemote(SpecialRemote):
     remove = None
 
     def initremote(self) -> None:
-        # setting the uuid here unfortunately does not work, initremote is executed to late
+        # setting the uuid here unfortunately does not work, initremote is
+        # executed to late
         # self.annex.setconfig("uuid", GETEXEC_REMOTE_UUID)
         pass
 

@@ -4,7 +4,11 @@ __docformat__ = "restructuredtext"
 
 import logging
 
+from . import _version
+
 lgr = logging.getLogger("datalad.getexec")
+
+__version__ = _version.get_versions()["version"]
 
 # Defines a datalad command suite.
 # This variable must be bound as a setuptools entrypoint
@@ -26,7 +30,3 @@ command_suite = (
         ),
     ],
 )
-
-from . import _version
-
-__version__ = _version.get_versions()["version"]

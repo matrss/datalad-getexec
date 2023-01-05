@@ -2,13 +2,9 @@
 
 __docformat__ = "restructuredtext"
 
-import base64
 import json
 import logging
-import os.path
-import urllib.parse
 from argparse import REMAINDER
-from pathlib import Path
 from typing import Literal, Optional
 
 from datalad.distribution.dataset import (
