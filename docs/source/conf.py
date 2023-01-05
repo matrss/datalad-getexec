@@ -12,17 +12,13 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
-import subprocess
-
 import datetime
-from os.path import (
-    abspath,
-    dirname,
-    exists,
-    join as opj,
-)
+import subprocess
+import sys
 from os import pardir
+from os.path import abspath, dirname, exists
+from os.path import join as opj
+from typing import List
 
 import datalad_getexec
 
@@ -113,7 +109,7 @@ language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = []
+exclude_patterns: List[str] = []
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"

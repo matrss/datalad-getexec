@@ -10,3 +10,19 @@ extend-exclude = '''
   | ^/datalad_getexec/_version.py
 )
 '''
+
+[tool.isort]
+profile = "black"
+skip_gitignore = true
+extend_skip = [
+  "_datalad_buildsupport/",
+  "versioneer.py",
+  "datalad_getexec/_version.py",
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+exclude = [
+  '_build/',
+  'build/',
+]
