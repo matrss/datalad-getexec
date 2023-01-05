@@ -26,3 +26,6 @@ exclude = [
   '_build/',
   'build/',
 ]
+
+# [tool.flake8]
+# flake8 still does not support pyproject.toml, so it's configured in .flake8
