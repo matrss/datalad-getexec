@@ -2,9 +2,10 @@
 
 __docformat__ = "restructuredtext"
 
+import base64
 import json
 import logging
-from argparse import REMAINDER
+import urllib.parse
 from typing import Literal, Optional
 
 from datalad.distribution.dataset import (
@@ -16,7 +17,7 @@ from datalad.distribution.dataset import (
 from datalad.interface.base import Interface, build_doc, eval_results
 from datalad.interface.results import get_status_dict
 from datalad.support.annexrepo import AnnexRepo
-from datalad.support.constraints import EnsureListOf, EnsureNone, EnsureStr
+from datalad.support.constraints import EnsureNone, EnsureStr
 from datalad.support.param import Parameter
 
 import datalad_getexec.remote
@@ -34,14 +35,14 @@ class GetExec(Interface):
     _params_ = dict(
         cmd=Parameter(
             args=("cmd",),
-            nargs=REMAINDER,
+            nargs="+",
             metavar="COMMAND",
             doc="""the command to execute and register. The first argument is
             the program to execute, the following arguments are passed to this
             program. It is expected that the program takes a target filename
             as its last argument, which is appended to the full command in the
             special remote.""",
-            constraints=EnsureListOf(str),
+            constraints=EnsureStr(),
         ),
         dataset=Parameter(
             args=("-d", "--dataset"),
@@ -73,7 +74,9 @@ class GetExec(Interface):
         )
         logger.debug("cmd is %s", cmd)
         json_cmd = json.dumps(cmd, separators=(",", ":"))
-        url = "getexec:json-" + json_cmd
+        url = "getexec:base64-" + urllib.parse.quote(
+            base64.urlsafe_b64encode(json_cmd.encode("utf-8"))
+        )
         logger.debug("url is %s", url)
 
         pathobj = ds.pathobj

@@ -1,7 +1,9 @@
+import base64
 import inspect
 import json
 import logging
 import subprocess
+import urllib.parse
 
 from annexremote import Master, RemoteError, SpecialRemote
 
@@ -43,8 +45,12 @@ class GetExecRemote(SpecialRemote):
         logger.debug("urls for this key: %s", urls)
         # always use the first url if multiple are defined
         url = urls[0].removeprefix("getexec:")
-        if url.startswith("json-"):
-            cmd = json.loads(url.removeprefix("json-"))
+        if url.startswith("base64-"):
+            cmd = json.loads(
+                base64.urlsafe_b64decode(
+                    urllib.parse.unquote(url.removeprefix("base64-")).encode("utf-8")
+                )
+            )
             cmd.append(filename)
             _execute_cmd(cmd)
         else:
