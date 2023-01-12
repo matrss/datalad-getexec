@@ -3,7 +3,6 @@ from contextlib import contextmanager
 
 import datalad.api as da
 import datalad.distribution.dataset as ddd
-import hypothesis as h
 import hypothesis.stateful as hst
 import hypothesis.strategies as hs
 import pytest
@@ -100,6 +99,3 @@ class DatasetActions(hst.RuleBasedStateMachine):
 
 
 TestDatasetActions = DatasetActions.TestCase
-TestDatasetActions.settings = h.settings(
-    max_examples=20, stateful_step_count=250, deadline=None
-)
