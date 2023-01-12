@@ -1,8 +1,8 @@
 name: tox
 
 on:
-  push:
-  pull_request:
+  schedule:
+    - cron: '30 1 * * *'
 
 jobs:
   tox:
@@ -28,4 +28,4 @@ jobs:
           python -m pip install tox
       - name: Run tox test suite
         run: |
-          tox -- --hypothesis-show-statistics --hypothesis-profile fast
+          tox -- --hypothesis-show-statistics --hypothesis-profile ci
