@@ -92,9 +92,7 @@ def ensure_special_remote(repo: AnnexRepo, remote: Literal["getexec"]) -> None:
     Very similar to datalad.customremotes.base.ensure_datalad_remote.
     """
     uuids = {"getexec": datalad_getexec.remote.GETEXEC_REMOTE_UUID}
-    uuid = uuids.get(remote)
-    if not uuid:
-        raise ValueError("invalid remote name '{}'".format(remote))
+    uuid = uuids[remote]
     name = repo.get_special_remotes().get(uuid, {}).get("name")
     if not name:
         repo.init_remote(
