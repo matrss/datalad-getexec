@@ -44,6 +44,14 @@ class GetExec(Interface):
             special remote.""",
             constraints=EnsureStr(),
         ),
+        path=Parameter(
+            args=("-O", "--path"),
+            doc="""target for the program execution. If the path is directory,
+            then a string representation of the command will be used as the
+            target filename. Otherwise this parameter is assumed to be the target
+            filename. The target is always assumed to be relative to the dataset.""",
+            constraints=EnsureStr(),
+        ),
         dataset=Parameter(
             args=("-d", "--dataset"),
             metavar="PATH",
@@ -53,22 +61,12 @@ class GetExec(Interface):
             be saved in the dataset.""",
             constraints=EnsureDataset() | EnsureNone(),
         ),
-        path=Parameter(
-            args=("-O", "--path"),
-            doc="""target for the program execution. If the path is directory,
-            then a string representation of the command will be used as the
-            target filename. Otherwise this parameter is assumed to be the target
-            filename. The target is always assumed to be relative to the dataset.""",
-            constraints=EnsureStr() | EnsureNone(),
-        ),
     )
 
     @staticmethod
     @datasetmethod(name="getexec")
     @eval_results
-    def __call__(
-        cmd: str, dataset: Optional[Dataset] = None, path: Optional[str] = None
-    ):
+    def __call__(cmd: str, path: str, dataset: Optional[Dataset] = None):
         ds = require_dataset(
             dataset, check_installed=True, purpose="execute and register a command"
         )
@@ -79,11 +77,7 @@ class GetExec(Interface):
         )
         logger.debug("url is %s", url)
 
-        pathobj = ds.pathobj
-        if path:
-            pathobj = pathobj / path
-        if pathobj.is_dir():
-            pathobj = pathobj / url
+        pathobj = ds.pathobj / path
         logger.debug("target path is %s", pathobj)
 
         ensure_special_remote(ds.repo, "getexec")
