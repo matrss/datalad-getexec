@@ -85,14 +85,22 @@ class DatasetActions(hst.RuleBasedStateMachine):
     @hst.rule(file=files)
     def drop_file(self, file):
         filename, dataset, content = file
-        dataset.drop(filename)
-        self.content_is_available[dataset][content] = False
+        result = dataset.drop(filename)
+        if self.content_is_available[dataset][content]:
+            assert result[0]["status"] == "ok"
+            self.content_is_available[dataset][content] = False
+        else:
+            assert result[0]["status"] == "notneeded"
 
     @hst.rule(file=files)
     def get_file(self, file):
         filename, dataset, content = file
-        dataset.get(filename)
-        self.content_is_available[dataset][content] = True
+        result = dataset.get(filename)
+        if not self.content_is_available[dataset][content]:
+            assert result[0]["status"] == "ok"
+            self.content_is_available[dataset][content] = True
+        else:
+            assert result[0]["status"] == "notneeded"
 
     @hst.invariant()
     def consistent_state(self):
