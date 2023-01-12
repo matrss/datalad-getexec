@@ -4,7 +4,7 @@ exclude =
     .git,
     __pycache__,
     _datalad_buildsupport,
-    _build,
+    .tox,
     build,
     versioneer.py,
     datalad_getexec/_version.py

@@ -11,20 +11,17 @@
     {
       devShells = forAllSystems (system:
         let
-          pkgs = import inputs.nixpkgs { inherit system; };
+          pkgs = inputs.nixpkgs.legacyPackages.${system};
           python-env = pkgs.python3.withPackages (ps: with ps; [
+            setuptools
             pip
+            virtualenv
+            tox
           ]);
         in
         {
           default = pkgs.mkShell {
             nativeBuildInputs = with pkgs; [ python-env ];
-            shellHook = ''
-              export PIP_PREFIX=$(pwd)/_build/pip_packages
-              export PYTHONPATH="$PIP_PREFIX/${python-env.sitePackages}:$PYTHONPATH"
-              export PATH="$PIP_PREFIX/bin:$PATH"
-              unset SOURCE_DATE_EPOCH
-            '';
           };
         });
     };

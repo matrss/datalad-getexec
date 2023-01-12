@@ -23,7 +23,7 @@ extend_skip = [
 [tool.mypy]
 ignore_missing_imports = true
 exclude = [
-  '_build/',
+  '.tox/',
   'build/',
 ]
 
