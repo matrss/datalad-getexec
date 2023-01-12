@@ -3,6 +3,7 @@ from contextlib import contextmanager
 
 import datalad.api as da
 import datalad.distribution.dataset as ddd
+import datalad.runner.exception
 import hypothesis.stateful as hst
 import hypothesis.strategies as hs
 import pytest
@@ -32,6 +33,11 @@ def test_remote_is_initialized(dataset):
     dataset.getexec(["bash", "-c", 'echo -n -e "test" > "$1"', "test"], path="test.txt")
     sibling_uuids = map(lambda x: x["annex-uuid"], dataset.siblings())
     assert datalad_getexec.remote.GETEXEC_REMOTE_UUID in sibling_uuids
+
+
+def test_invalid_command_raises_remote_error(dataset):
+    with pytest.raises(datalad.runner.exception.CommandError):
+        dataset.getexec(["false"], path="test.txt")
 
 
 class DatasetActions(hst.RuleBasedStateMachine):
