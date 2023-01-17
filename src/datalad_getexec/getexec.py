@@ -6,7 +6,7 @@ import base64
 import json
 import logging
 import urllib.parse
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 from datalad.distribution.dataset import (
     Dataset,
@@ -52,6 +52,16 @@ class GetExec(Interface):
             filename. The target is always assumed to be relative to the dataset.""",
             constraints=EnsureStr(),
         ),
+        inputs=Parameter(
+            args=("-i", "--input"),
+            dest="inputs",
+            metavar=("PATH"),
+            action="append",
+            doc="""A dependency for the getexec command. These dependencies will be
+            fetched by a `datalad get` before executing the getexec command. The
+            dependencies will be registered in git-annex in a way that they will be
+            fetched on subsequent `get`s on the file created by getexec.""",
+        ),
         dataset=Parameter(
             args=("-d", "--dataset"),
             metavar="PATH",
@@ -66,14 +76,25 @@ class GetExec(Interface):
     @staticmethod
     @datasetmethod(name="getexec")
     @eval_results
-    def __call__(cmd: str, path: str, dataset: Optional[Dataset] = None):
+    def __call__(
+        cmd: str,
+        path: str,
+        dataset: Optional[Dataset] = None,
+        inputs: Optional[List[str]] = None,
+    ):
         ds = require_dataset(
             dataset, check_installed=True, purpose="execute and register a command"
         )
-        logger.debug("cmd is %s", cmd)
-        json_cmd = json.dumps(cmd, separators=(",", ":"))
+        if inputs is None:
+            inputs = []
+        spec = {
+            "inputs": inputs,
+            "cmd": cmd,
+        }
+        logger.debug("spec is %s", spec)
+        json_spec = json.dumps(spec, separators=(",", ":"))
         url = "getexec:base64-" + urllib.parse.quote(
-            base64.urlsafe_b64encode(json_cmd.encode("utf-8"))
+            base64.urlsafe_b64encode(json_spec.encode("utf-8"))
         )
         logger.debug("url is %s", url)
 

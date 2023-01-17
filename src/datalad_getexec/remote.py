@@ -37,7 +37,8 @@ class GetExecRemote(SpecialRemote):
         def _execute_cmd(cmd):
             logger.debug("executing %s", cmd)
             self.annex.info("executing {}".format(cmd))
-            result = subprocess.run(cmd)
+            result = subprocess.run(cmd, stdout=subprocess.PIPE)
+            logger.info(result.stdout)
             if result.returncode != 0:
                 raise RemoteError("Failed to execute {}".format(cmd))
 
@@ -46,11 +47,25 @@ class GetExecRemote(SpecialRemote):
         # always use the first url if multiple are defined
         url = urls[0].removeprefix("getexec:")
         if url.startswith("base64-"):
-            cmd = json.loads(
+            spec = json.loads(
                 base64.urlsafe_b64decode(
                     urllib.parse.unquote(url.removeprefix("base64-")).encode("utf-8")
                 )
             )
+
+            inputs = spec["inputs"]
+            if inputs:
+                import datalad.api as da
+                from datalad.utils import swallow_outputs
+
+                with swallow_outputs() as cm:
+                    logger.info("fetching inputs: %s", inputs)
+                    # NOTE: this might be more efficient if we collect transitive
+                    # dependencies and aggregate them in one get call
+                    da.get(inputs)
+                    logger.info("datalad get output: %s", cm.out)
+
+            cmd = spec["cmd"]
             cmd.append(filename)
             _execute_cmd(cmd)
         else:

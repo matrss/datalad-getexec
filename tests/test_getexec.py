@@ -32,7 +32,13 @@ def generate_dataset():
 
 def test_remote_is_initialized(dataset):
     dataset.getexec(
-        ["bash", "-c", 'printf "%s" "test" > "$1"', "test"], path="test.txt"
+        [
+            "bash",
+            "-c",
+            'printf "%s" "output on stdout"; printf "%s" "test" > "$1"',
+            "test",
+        ],
+        path="test.txt",
     )
     sibling_uuids = map(lambda x: x["annex-uuid"], dataset.siblings())
     assert datalad_getexec.remote.GETEXEC_REMOTE_UUID in sibling_uuids
@@ -49,7 +55,9 @@ class DatasetActions(hst.RuleBasedStateMachine):
         self.files = []
         self.content_is_available = defaultdict(dict)
 
-        dataset_paths = da.create_test_dataset(spec="0-2/0-2")
+        # TODO: somehow test getexec in subdatasets
+        # dataset_paths = da.create_test_dataset(spec="0-2/0-2")
+        dataset_paths = da.create_test_dataset(spec="")
         self.datasets = [ddd.Dataset(dataset_path) for dataset_path in dataset_paths]
         for dataset in self.datasets:
             dataset.create(force=True)
@@ -78,11 +86,55 @@ class DatasetActions(hst.RuleBasedStateMachine):
             [
                 "bash",
                 "-c",
-                "printf '%s' {} > \"$1\"".format(shlex.quote(content)),
+                "printf '%s' 'output on stdout'; printf '%s' {} > \"$1\"".format(
+                    shlex.quote(content)
+                ),
                 "test",
             ],
             path=filename,
         )
+        self.files.append((filename, dataset, content))
+        self.content_is_available[dataset][content] = True
+        return (filename, dataset, content)
+
+    @hst.rule(
+        target=files,
+        data=hs.data(),
+        uuid=hs.uuids(version=4),
+        content=hs.text(
+            alphabet=hs.characters(
+                blacklist_categories=("Cs",), blacklist_characters=["\0"]
+            )
+        ).map(lambda x: x.replace("\r\n", "\n").replace("\r", "\n")),
+        depends_on=hs.lists(files, min_size=1),
+    )
+    def add_getexec_file_with_dependency(self, data, uuid, content, depends_on):
+        dataset = data.draw(hs.sampled_from(self.datasets))
+        filename = str(uuid)
+        depends_on_filenames = list(
+            map(
+                str,
+                map(
+                    lambda x: (x[1].pathobj / x[0]).relative_to(dataset.pathobj),
+                    depends_on,
+                ),
+            )
+        )
+        cmd = [
+            "bash",
+            "-c",
+            "printf '%s' 'output on stdout'; ({} printf '%s' {}) > \"$1\"".format(
+                "; ".join(list(map(lambda x: "cat " + x, depends_on_filenames)) + [""]),
+                shlex.quote(content),
+            ),
+            "test",
+        ]
+        dataset.getexec(
+            cmd,
+            path=filename,
+            inputs=depends_on_filenames,
+        )
+        content = (dataset.pathobj / filename).read_text()
         self.files.append((filename, dataset, content))
         self.content_is_available[dataset][content] = True
         return (filename, dataset, content)
