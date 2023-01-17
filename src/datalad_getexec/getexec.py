@@ -55,12 +55,12 @@ class GetExec(Interface):
         inputs=Parameter(
             args=("-i", "--input"),
             dest="inputs",
-            metavar=("PATH"),
+            metavar="PATH",
             action="append",
-            doc="""A dependency for the getexec command. These dependencies will be
-            fetched by a `datalad get` before executing the getexec command. The
+            doc="""a dependency for the getexec command. These dependencies will be
+            fetched by a :command:`datalad get` before executing the getexec command. The
             dependencies will be registered in git-annex in a way that they will be
-            fetched on subsequent `get`s on the file created by getexec.""",
+            fetched on subsequent :command:`get`s on the file created by getexec.""",
         ),
         dataset=Parameter(
             args=("-d", "--dataset"),
