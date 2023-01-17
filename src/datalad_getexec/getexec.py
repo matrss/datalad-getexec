@@ -80,13 +80,15 @@ class GetExec(Interface):
         pathobj = ds.pathobj / path
         logger.debug("target path is %s", pathobj)
 
-        ensure_special_remote(ds.repo, "getexec")
+        ensure_special_remote_exists_and_is_enabled(ds.repo, "getexec")
         ds.repo.add_url_to_file(pathobj, url)
         yield ds.save(pathobj)
         yield get_status_dict(action="getexec", status="ok")
 
 
-def ensure_special_remote(repo: AnnexRepo, remote: Literal["getexec"]) -> None:
+def ensure_special_remote_exists_and_is_enabled(
+    repo: AnnexRepo, remote: Literal["getexec"]
+) -> None:
     """Initialize and enable the getexec special remote, if it isn't already.
 
     Very similar to datalad.customremotes.base.ensure_datalad_remote.
