@@ -26,7 +26,22 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install tox
+          python -m pip install tox datalad
+      - uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.HYPOTHESIS_EXAMPLE_DB_REPO_KEY }}
+      - name: Fetch hypothesis example database
+        if: ${{ matrix.python-version == "3.11" }}
+        run: |
+          git config --global annex.private true
+          datalad clone git@github.com:matrss/datalad-getexec-hypothesis-example-db.git .hypothesis
+          datalad get -d .hypothesis
       - name: Run tox test suite
         run: |
           tox -- --hypothesis-show-statistics --hypothesis-profile ci
+      - name: Save and push hypothesis example database
+        if: ${{ matrix.python-version == "3.11" }}
+        run: |
+          datalad save -d .hypothesis
+          datalad push -d .hypothesis --to origin
+          datalad push -d .hypothesis --to github-lfs
