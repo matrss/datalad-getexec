@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import shlex
 from collections import defaultdict
 from contextlib import contextmanager
+from dataclasses import dataclass
+from typing import List, Optional
 
 import datalad.api as da
 import datalad.distribution.dataset as ddd
@@ -49,6 +53,14 @@ def test_invalid_command_raises_remote_error(dataset):
         dataset.getexec(["false"], path="test.txt")
 
 
+@dataclass
+class FileRecord:
+    name: str
+    dataset: ddd.Dataset
+    content: str
+    dependencies: Optional[List[FileRecord]] = None
+
+
 class DatasetActions(hst.RuleBasedStateMachine):
     def __init__(self):
         super().__init__()
@@ -93,9 +105,10 @@ class DatasetActions(hst.RuleBasedStateMachine):
             ],
             path=filename,
         )
-        self.files.append((filename, dataset, content))
+        file_record = FileRecord(filename, dataset, content)
+        self.files.append(file_record)
         self.content_is_available[dataset][content] = True
-        return (filename, dataset, content)
+        return file_record
 
     @hst.rule(
         target=files,
@@ -115,7 +128,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
             map(
                 str,
                 map(
-                    lambda x: (x[1].pathobj / x[0]).relative_to(dataset.pathobj),
+                    lambda x: (x.dataset.pathobj / x.name).relative_to(dataset.pathobj),
                     depends_on,
                 ),
             )
@@ -135,38 +148,42 @@ class DatasetActions(hst.RuleBasedStateMachine):
             inputs=depends_on_filenames,
         )
         content = (dataset.pathobj / filename).read_text()
-        self.files.append((filename, dataset, content))
+        file_record = FileRecord(filename, dataset, content, depends_on)
+        self.files.append(file_record)
         self.content_is_available[dataset][content] = True
-        return (filename, dataset, content)
+        for e in depends_on:
+            self.content_is_available[e.dataset][e.content]
+        return file_record
 
     @hst.rule(file=files)
-    def drop_file(self, file):
-        filename, dataset, content = file
-        result = dataset.drop(filename)
-        if self.content_is_available[dataset][content]:
+    def drop_file(self, file: FileRecord):
+        result = file.dataset.drop(file.name)
+        if self.content_is_available[file.dataset][file.content]:
             assert result[0]["status"] == "ok"
-            self.content_is_available[dataset][content] = False
+            self.content_is_available[file.dataset][file.content] = False
         else:
             assert result[0]["status"] == "notneeded"
 
     @hst.rule(file=files)
-    def get_file(self, file):
-        filename, dataset, content = file
-        result = dataset.get(filename)
-        if not self.content_is_available[dataset][content]:
+    def get_file(self, file: FileRecord):
+        result = file.dataset.get(file.name)
+        if not self.content_is_available[file.dataset][file.content]:
             assert result[0]["status"] == "ok"
-            self.content_is_available[dataset][content] = True
+            self.content_is_available[file.dataset][file.content] = True
+            if file.dependencies is not None:
+                for e in file.dependencies:
+                    self.content_is_available[e.dataset][e.content] = True
         else:
             assert result[0]["status"] == "notneeded"
 
     @hst.invariant()
     def consistent_state(self):
-        for filename, dataset, content in self.files:
-            filepath = dataset.pathobj / filename
+        for e in self.files:
+            filepath = e.dataset.pathobj / e.name
             assert filepath.is_symlink()
-            assert filepath.exists() == self.content_is_available[dataset][content]
-            if self.content_is_available[dataset][content]:
-                assert filepath.read_text() == content
+            assert filepath.exists() == self.content_is_available[e.dataset][e.content]
+            if self.content_is_available[e.dataset][e.content]:
+                assert filepath.read_text() == e.content
 
 
 TestDatasetActions = DatasetActions.TestCase
