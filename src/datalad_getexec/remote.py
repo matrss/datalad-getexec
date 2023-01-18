@@ -46,10 +46,10 @@ class GetExecRemote(SpecialRemote):
         logger.debug("urls for this key: %s", urls)
         # always use the first url if multiple are defined
         url = urls[0].removeprefix("getexec:")
-        if url.startswith("base64-"):
+        if url.startswith("v1-"):
             spec = json.loads(
                 base64.urlsafe_b64decode(
-                    urllib.parse.unquote(url.removeprefix("base64-")).encode("utf-8")
+                    urllib.parse.unquote(url.removeprefix("v1-")).encode("utf-8")
                 )
             )
 

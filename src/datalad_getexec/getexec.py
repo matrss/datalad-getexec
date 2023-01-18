@@ -93,7 +93,7 @@ class GetExec(Interface):
         }
         logger.debug("spec is %s", spec)
         json_spec = json.dumps(spec, separators=(",", ":"))
-        url = "getexec:base64-" + urllib.parse.quote(
+        url = "getexec:v1-" + urllib.parse.quote(
             base64.urlsafe_b64encode(json_spec.encode("utf-8"))
         )
         logger.debug("url is %s", url)
