@@ -31,7 +31,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.HYPOTHESIS_EXAMPLE_DB_REPO_KEY }}
       - name: Fetch hypothesis example database
-        if: ${{ matrix.python-version == "3.11" }}
+        if: ${{ matrix.python-version == '3.11' }}
         run: |
           git config --global annex.private true
           datalad clone git@github.com:matrss/datalad-getexec-hypothesis-example-db.git .hypothesis
@@ -40,7 +40,7 @@ jobs:
         run: |
           tox -- --hypothesis-show-statistics --hypothesis-profile ci
       - name: Save and push hypothesis example database
-        if: ${{ matrix.python-version == "3.11" }}
+        if: ${{ matrix.python-version == '3.11' }}
         run: |
           datalad save -d .hypothesis
           datalad push -d .hypothesis --to origin
