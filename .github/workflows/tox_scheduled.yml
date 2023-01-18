@@ -32,8 +32,9 @@ jobs:
           ssh-private-key: ${{ secrets.HYPOTHESIS_EXAMPLE_DB_REPO_KEY }}
       - name: Fetch hypothesis example database
         run: |
-          git config --global annex.private true
-          datalad clone git@github.com:matrss/datalad-getexec-hypothesis-example-db.git .hypothesis
+          git clone git@github.com:matrss/datalad-getexec-hypothesis-example-db.git .hypothesis
+          git -C .hypothesis config annex.private true
+          git -C .hypothesis annex init
           datalad get -d .hypothesis
       - name: Run tox test suite
         run: |
@@ -43,4 +44,3 @@ jobs:
         run: |
           datalad save -d .hypothesis
           datalad push -d .hypothesis --to origin
-          datalad push -d .hypothesis --to github-lfs
