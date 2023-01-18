@@ -152,7 +152,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
         self.files.append(file_record)
         self.content_is_available[dataset][content] = True
         for e in depends_on:
-            self.content_is_available[e.dataset][e.content]
+            self.content_is_available[e.dataset][e.content] = True
         return file_record
 
     @hst.rule(file=files)
