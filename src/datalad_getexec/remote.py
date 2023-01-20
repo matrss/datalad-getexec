@@ -12,6 +12,10 @@ logger = logging.getLogger("datalad.getexec.remote")
 GETEXEC_REMOTE_UUID = "1da43985-0b3e-4123-89f0-90b88021ed34"
 
 
+class HandleUrlError(Exception):
+    pass
+
+
 class GetExecRemote(SpecialRemote):
     # explicitly disable unsupported operations
     transfer_store = None
@@ -42,32 +46,50 @@ class GetExecRemote(SpecialRemote):
             if result.returncode != 0:
                 raise RemoteError("Failed to execute {}".format(cmd))
 
+        def _handle_url(url):
+            if url.startswith("v1-"):
+                spec = json.loads(
+                    base64.urlsafe_b64decode(
+                        urllib.parse.unquote(url.removeprefix("v1-")).encode("utf-8")
+                    )
+                )
+
+                inputs = spec["inputs"]
+                if inputs:
+                    import datalad.api as da
+                    from datalad.utils import swallow_outputs
+
+                    for e in inputs:
+                        result = subprocess.run(
+                            ["git", "annex", "lookupkey", e], capture_output=True
+                        )
+                        input_key = result.stdout.decode("utf-8").removesuffix("\n")
+                        if result.returncode == 0 and input_key == key:
+                            raise HandleUrlError("Circular dependency found")
+
+                    with swallow_outputs() as cm:
+                        logger.info("fetching inputs: %s", inputs)
+                        # NOTE: this might be more efficient if we collect transitive
+                        # dependencies and aggregate them in one get call
+                        da.get(inputs)
+                        logger.info("datalad get output: %s", cm.out)
+
+                cmd = spec["cmd"]
+                cmd.append(filename)
+                _execute_cmd(cmd)
+            else:
+                raise HandleUrlError("Unsupported URL")
+
         urls = self.annex.geturls(key, "getexec:")
         logger.debug("urls for this key: %s", urls)
-        # always use the first url if multiple are defined
-        url = urls[0].removeprefix("getexec:")
-        if url.startswith("v1-"):
-            spec = json.loads(
-                base64.urlsafe_b64decode(
-                    urllib.parse.unquote(url.removeprefix("v1-")).encode("utf-8")
-                )
-            )
 
-            inputs = spec["inputs"]
-            if inputs:
-                import datalad.api as da
-                from datalad.utils import swallow_outputs
-
-                with swallow_outputs() as cm:
-                    logger.info("fetching inputs: %s", inputs)
-                    # NOTE: this might be more efficient if we collect transitive
-                    # dependencies and aggregate them in one get call
-                    da.get(inputs)
-                    logger.info("datalad get output: %s", cm.out)
-
-            cmd = spec["cmd"]
-            cmd.append(filename)
-            _execute_cmd(cmd)
+        for url in urls:
+            url = url.removeprefix("getexec:")
+            try:
+                _handle_url(url)
+                break
+            except HandleUrlError:
+                pass
         else:
             raise RemoteError("Failed to handle key {}".format(key))
 
