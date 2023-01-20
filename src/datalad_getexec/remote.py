@@ -14,7 +14,7 @@ GETEXEC_REMOTE_UUID = "1da43985-0b3e-4123-89f0-90b88021ed34"
 
 
 def removeprefix(s: str, prefix: str) -> str:
-    if sys.version_info > (3, 8):
+    if sys.version_info >= (3, 9):
         return s.removeprefix(prefix)
     if s.startswith(prefix):
         return s[len(prefix) :]
