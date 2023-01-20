@@ -21,6 +21,14 @@ def removeprefix(s: str, prefix: str) -> str:
     return s
 
 
+def removesuffix(s: str, suffix: str) -> str:
+    if sys.version_info >= (3, 9):
+        return s.removesuffix(suffix)
+    if s.endswith(suffix):
+        return s[:-len(suffix)]
+    return s
+
+
 class HandleUrlError(Exception):
     pass
 
@@ -72,7 +80,7 @@ class GetExecRemote(SpecialRemote):
                         result = subprocess.run(
                             ["git", "annex", "lookupkey", e], capture_output=True
                         )
-                        input_key = result.stdout.decode("utf-8").removesuffix("\n")
+                        input_key = removesuffix(result.stdout.decode("utf-8"), "\n")
                         if result.returncode == 0 and input_key == key:
                             raise HandleUrlError("Circular dependency found")
 
