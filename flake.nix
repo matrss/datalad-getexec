@@ -21,6 +21,7 @@
         in
         {
           default = pkgs.mkShell {
+            packages = with pkgs; [ git-annex ];
             nativeBuildInputs = with pkgs; [ python-env ];
           };
         });
