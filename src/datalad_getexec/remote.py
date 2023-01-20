@@ -3,6 +3,7 @@ import inspect
 import json
 import logging
 import subprocess
+import sys
 import urllib.parse
 
 from annexremote import Master, RemoteError, SpecialRemote
@@ -10,6 +11,14 @@ from annexremote import Master, RemoteError, SpecialRemote
 logger = logging.getLogger("datalad.getexec.remote")
 
 GETEXEC_REMOTE_UUID = "1da43985-0b3e-4123-89f0-90b88021ed34"
+
+
+def removeprefix(s: str, prefix: str) -> str:
+    if sys.version_info > (3, 8):
+        return s.removeprefix(prefix)
+    if s.startswith(prefix):
+        return s[len(prefix) :]
+    return s
 
 
 class HandleUrlError(Exception):
@@ -50,7 +59,7 @@ class GetExecRemote(SpecialRemote):
             if url.startswith("v1-"):
                 spec = json.loads(
                     base64.urlsafe_b64decode(
-                        urllib.parse.unquote(url.removeprefix("v1-")).encode("utf-8")
+                        urllib.parse.unquote(removeprefix(url, "v1-")).encode("utf-8")
                     )
                 )
 
@@ -84,7 +93,7 @@ class GetExecRemote(SpecialRemote):
         logger.debug("urls for this key: %s", urls)
 
         for url in urls:
-            url = url.removeprefix("getexec:")
+            url = removeprefix(url, "getexec:")
             try:
                 _handle_url(url)
                 break
