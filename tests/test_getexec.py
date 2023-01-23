@@ -80,6 +80,12 @@ class DatasetActions(hst.RuleBasedStateMachine):
     def teardown(self):
         self.root_dataset.remove(reckless="kill")
 
+    def _set_content_available(self, file):
+        self.content_is_available[file.dataset][file.content] = True
+        if file.dependencies is not None:
+            for e in file.dependencies:
+                self._set_content_available(e)
+
     # NOTE: null byte intentionally removed, behaves weird
     @hst.rule(
         target=files,
@@ -107,7 +113,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
         )
         file_record = FileRecord(filename, dataset, content)
         self.files.append(file_record)
-        self.content_is_available[dataset][content] = True
+        self._set_content_available(file_record)
         return file_record
 
     @hst.rule(
@@ -150,9 +156,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
         content = (dataset.pathobj / filename).read_text()
         file_record = FileRecord(filename, dataset, content, depends_on)
         self.files.append(file_record)
-        self.content_is_available[dataset][content] = True
-        for e in depends_on:
-            self.content_is_available[e.dataset][e.content] = True
+        self._set_content_available(file_record)
         return file_record
 
     @hst.rule(file=files)
@@ -169,10 +173,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
         result = file.dataset.get(file.name)
         if not self.content_is_available[file.dataset][file.content]:
             assert result[0]["status"] == "ok"
-            self.content_is_available[file.dataset][file.content] = True
-            if file.dependencies is not None:
-                for e in file.dependencies:
-                    self.content_is_available[e.dataset][e.content] = True
+            self._set_content_available(file)
         else:
             assert result[0]["status"] == "notneeded"
 
