@@ -81,10 +81,11 @@ class DatasetActions(hst.RuleBasedStateMachine):
         self.root_dataset.remove(reckless="kill")
 
     def _set_content_available(self, file):
-        self.content_is_available[file.dataset][file.content] = True
-        if file.dependencies is not None:
-            for e in file.dependencies:
-                self._set_content_available(e)
+        if not self.content_is_available.get(file.dataset, {}).get(file.content, False):
+            self.content_is_available[file.dataset][file.content] = True
+            if file.dependencies is not None:
+                for e in file.dependencies:
+                    self._set_content_available(e)
 
     # NOTE: null byte intentionally removed, behaves weird
     @hst.rule(
