@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shlex
+import tempfile
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -67,15 +68,17 @@ class DatasetActions(hst.RuleBasedStateMachine):
         self.files = []
         self.content_is_available = defaultdict(dict)
 
-        # TODO: somehow test getexec in subdatasets
-        # dataset_paths = da.create_test_dataset(spec="0-2/0-2")
-        dataset_paths = da.create_test_dataset(spec="")
-        self.datasets = [ddd.Dataset(dataset_path) for dataset_path in dataset_paths]
-        for dataset in self.datasets:
-            dataset.create(force=True)
-        self.root_dataset = self.datasets[0]
-
+    # TODO: somehow test getexec in subdatasets
+    datasets: hst.Bundle = hst.Bundle("datasets")
     files: hst.Bundle = hst.Bundle("files")
+
+    @hst.initialize(target=datasets)
+    def initial_dataset(self):
+        dataset_path = tempfile.mkdtemp()
+        dataset = ddd.Dataset(dataset_path)
+        dataset.create()
+        self.root_dataset = dataset
+        return dataset
 
     def teardown(self):
         self.root_dataset.remove(reckless="kill")
@@ -90,7 +93,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
     # NOTE: null byte intentionally removed, behaves weird
     @hst.rule(
         target=files,
-        data=hs.data(),
+        dataset=datasets,
         uuid=hs.uuids(version=4),
         content=hs.text(
             alphabet=hs.characters(
@@ -100,8 +103,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
         message=hs.one_of(hs.none(), hs.text()),
         depends_on=hs.lists(files),
     )
-    def add_getexec_file(self, data, uuid, content, message, depends_on):
-        dataset = data.draw(hs.sampled_from(self.datasets))
+    def add_getexec_file(self, dataset, uuid, content, message, depends_on):
         filename = str(uuid)
         depends_on_filenames = list(
             map(
