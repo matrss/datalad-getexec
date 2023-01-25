@@ -178,14 +178,27 @@ class DatasetActions(hst.RuleBasedStateMachine):
         else:
             assert result[0]["status"] == "notneeded"
 
+    def _file_is_in_consistent_state(self, file):
+        filepath = file.dataset.pathobj / file.name
+        assert filepath.is_symlink(), "'{}' is expected to be a symlink".format(
+            filepath
+        )
+        assert (
+            filepath.exists() == self.content_is_available[file.dataset][file.content]
+        ), "'{}' is expected to exist if and only if it's content '{}' is available".format(
+            filepath, file.content
+        )
+        if self.content_is_available[file.dataset][file.content]:
+            assert (
+                filepath.read_text() == file.content
+            ), "'{}' is expected to contain the content '{}'".format(
+                filepath, file.content
+            )
+
     @hst.invariant()
     def consistent_state(self):
         for e in self.files:
-            filepath = e.dataset.pathobj / e.name
-            assert filepath.is_symlink()
-            assert filepath.exists() == self.content_is_available[e.dataset][e.content]
-            if self.content_is_available[e.dataset][e.content]:
-                assert filepath.read_text() == e.content
+            self._file_is_in_consistent_state(e)
 
 
 TestDatasetActions = DatasetActions.TestCase
