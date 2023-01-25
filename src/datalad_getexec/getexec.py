@@ -71,6 +71,12 @@ class GetExec(Interface):
             be saved in the dataset.""",
             constraints=EnsureDataset() | EnsureNone(),
         ),
+        message=Parameter(
+            args=("-m", "--message"),
+            doc="""commit message to use. If no commit message is given the specified
+            command will be used in a readable format.""",
+            constraints=EnsureStr() | EnsureNone(),
+        ),
     )
 
     @staticmethod
@@ -81,6 +87,7 @@ class GetExec(Interface):
         path: str,
         dataset: Optional[Dataset] = None,
         inputs: Optional[List[str]] = None,
+        message: Optional[str] = None,
     ):
         ds = require_dataset(
             dataset, check_installed=True, purpose="execute and register a command"
@@ -103,7 +110,25 @@ class GetExec(Interface):
 
         ensure_special_remote_exists_and_is_enabled(ds.repo, "getexec")
         ds.repo.add_url_to_file(pathobj, url)
-        yield ds.save(pathobj)
+        msg = """\
+[DATALAD GETEXEC] {}
+
+=== Do not change lines below ===
+{}
+^^^ Do not change lines above ^^^
+        """
+        cmd_message_full = "'" + "' '".join(spec["cmd"]) + "'"
+        cmd_message = (
+            cmd_message_full
+            if len(cmd_message_full) <= 40
+            else cmd_message_full[:40] + " ..."
+        )
+        record = json.dumps(spec, indent=1, sort_keys=True)
+        msg = msg.format(
+            message if message is not None else cmd_message,
+            record,
+        )
+        yield ds.save(pathobj, message=msg)
         yield get_status_dict(action="getexec", status="ok")
 
 
