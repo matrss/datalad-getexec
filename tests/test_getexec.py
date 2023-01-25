@@ -157,6 +157,8 @@ class DatasetActions(hst.RuleBasedStateMachine):
         content = (dataset.pathobj / filename).read_text()
         file_record = FileRecord(filename, dataset, content, depends_on)
         self.files.append(file_record)
+        for dependency in file_record.dependencies:
+            self._set_content_available(dependency)
         self._set_content_available(file_record)
         return file_record
 
