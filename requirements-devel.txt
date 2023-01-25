@@ -9,3 +9,4 @@ black
 mypy
 isort
 flake8
+flake8-bugbear
