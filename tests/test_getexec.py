@@ -4,6 +4,7 @@ import tempfile
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Optional
 
 import datalad.api as da
@@ -108,17 +109,9 @@ class DatasetActions(hst.RuleBasedStateMachine):
                 ),
             )
         )
-        cmd = [
-            "bash",
-            "-c",
-            "printf 'output on stdout'; ({} printf '{}') > \"$1\"".format(
-                "; ".join(list(map(lambda x: "cat " + x, depends_on_filenames)) + [""]),
-                content,
-            )
-            if depends_on
-            else "printf 'output on stdout'; printf '{}' > \"$1\"".format(content),
-            "test",
-        ]
+        write_bytes_path = Path(__file__).parent / "resources/write_bytes.py"
+        print(write_bytes_path)
+        cmd = [str(write_bytes_path), repr(content)]
         dataset.getexec(
             cmd,
             path=filename,
