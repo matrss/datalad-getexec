@@ -6,7 +6,6 @@ import json
 import logging
 from typing import List, Literal, Optional
 
-import utils
 from datalad.distribution.dataset import (
     Dataset,
     EnsureDataset,
@@ -20,6 +19,7 @@ from datalad.support.constraints import EnsureNone, EnsureStr
 from datalad.support.param import Parameter
 
 import datalad_getexec.remote
+from datalad_getexec import utils
 
 logger = logging.getLogger("datalad.getexec.getexec")
 

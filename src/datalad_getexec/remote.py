@@ -2,8 +2,9 @@ import inspect
 import logging
 import subprocess
 
-import utils
 from annexremote import Master, RemoteError, SpecialRemote
+
+from datalad_getexec import utils
 
 logger = logging.getLogger("datalad.getexec.remote")
 
