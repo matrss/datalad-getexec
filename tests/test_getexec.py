@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import shlex
 import tempfile
 from collections import defaultdict
 from contextlib import contextmanager
@@ -40,7 +39,7 @@ def test_remote_is_initialized(dataset):
         [
             "bash",
             "-c",
-            'printf "%s" "output on stdout"; printf "%s" "test" > "$1"',
+            'printf "output on stdout"; printf "test" > "$1"',
             "test",
         ],
         path="test.txt",
@@ -58,7 +57,7 @@ def test_invalid_command_raises_remote_error(dataset):
 class FileRecord:
     name: str
     dataset: ddd.Dataset
-    content: str
+    content: bytes
     dependencies: Optional[List[FileRecord]] = None
 
 
@@ -95,11 +94,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
         target=files,
         dataset=datasets,
         uuid=hs.uuids(version=4),
-        content=hs.text(
-            alphabet=hs.characters(
-                blacklist_categories=("Cs",), blacklist_characters=["\0"]
-            )
-        ).map(lambda x: x.replace("\r\n", "\n").replace("\r", "\n")),
+        content=hs.binary(),
         message=hs.one_of(hs.none(), hs.text()),
         depends_on=hs.lists(files),
     )
@@ -117,13 +112,13 @@ class DatasetActions(hst.RuleBasedStateMachine):
         cmd = [
             "bash",
             "-c",
-            "printf '%s' 'output on stdout'; ({} printf '%s' {}) > \"$1\"".format(
+            "printf 'output on stdout'; ({} printf '{}') > \"$1\"".format(
                 "; ".join(list(map(lambda x: "cat " + x, depends_on_filenames)) + [""]),
-                shlex.quote(content),
+                content
             )
             if depends_on
-            else "printf '%s' 'output on stdout'; printf '%s' {} > \"$1\"".format(
-                shlex.quote(content)
+            else "printf 'output on stdout'; printf '{}' > \"$1\"".format(
+                content
             ),
             "test",
         ]
@@ -133,7 +128,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
             inputs=depends_on_filenames if depends_on else None,
             message=message,
         )
-        content = (dataset.pathobj / filename).read_text()
+        content = (dataset.pathobj / filename).read_bytes()
         file_record = FileRecord(
             filename, dataset, content, depends_on if depends_on else None
         )
@@ -174,7 +169,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
         )
         if self.content_is_available[file.dataset][file.content]:
             assert (
-                filepath.read_text() == file.content
+                filepath.read_bytes() == file.content
             ), "'{}' is expected to contain the content '{}'".format(
                 filepath, file.content
             )
