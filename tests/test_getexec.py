@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import tempfile
+import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import datalad.api as da
 import datalad.distribution.dataset as ddd
@@ -35,7 +36,7 @@ def generate_dataset():
         ds.remove(reckless="kill")
 
 
-def test_remote_is_initialized(dataset):
+def test_remote_is_initialized(dataset: ddd.Dataset) -> None:
     dataset.getexec(
         [
             "bash",
@@ -49,7 +50,7 @@ def test_remote_is_initialized(dataset):
     assert datalad_getexec.remote.GETEXEC_REMOTE_UUID in sibling_uuids
 
 
-def test_invalid_command_raises_remote_error(dataset):
+def test_invalid_command_raises_remote_error(dataset: ddd.Dataset) -> None:
     with pytest.raises(datalad.runner.exception.CommandError):
         dataset.getexec(["false"], path="test.txt")
 
@@ -69,17 +70,17 @@ class ContentRecord:
 
 
 class DatasetActions(hst.RuleBasedStateMachine):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.files = []
-        self.content_records = {}
+        self.content_records: Dict[ddd.Dataset, Dict[bytes, ContentRecord]] = {}
 
     # TODO: somehow test getexec in subdatasets
     datasets: hst.Bundle = hst.Bundle("datasets")
     files: hst.Bundle = hst.Bundle("files")
 
     @hst.initialize(target=datasets)
-    def initial_dataset(self):
+    def initial_dataset(self) -> ddd.Dataset:
         dataset_path = tempfile.mkdtemp()
         dataset = ddd.Dataset(dataset_path)
         dataset.create()
@@ -87,10 +88,10 @@ class DatasetActions(hst.RuleBasedStateMachine):
         self.content_records[dataset] = {}
         return dataset
 
-    def teardown(self):
+    def teardown(self) -> None:
         self.root_dataset.remove(reckless="kill")
 
-    def _set_content_available(self, content_record):
+    def _set_content_available(self, content_record: ContentRecord) -> None:
         if not content_record.is_available:
             content_record.is_available = True
             if content_record.dependencies is not None:
@@ -100,15 +101,21 @@ class DatasetActions(hst.RuleBasedStateMachine):
     @hst.rule(
         target=files,
         dataset=datasets,
-        uuid=hs.uuids(version=4),
+        depends_on=hs.lists(files),
+        filename=hs.uuids(version=4).map(lambda x: str(x)),
         content=hs.binary(),
         message=hs.one_of(hs.none(), hs.text()),
-        depends_on=hs.lists(files),
     )
-    def add_getexec_file(self, dataset, uuid, content, message, depends_on):
+    def add_getexec_file(
+        self,
+        dataset: ddd.Dataset,
+        depends_on: List[FileRecord],
+        filename: str,
+        content: bytes,
+        message: Optional[str],
+    ) -> FileRecord:
         if isinstance(message, str):
             h.assume("\0" not in message)
-        filename = str(uuid)
         depends_on_filenames = list(
             map(
                 str,
@@ -142,7 +149,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
         return file_record
 
     @hst.rule(file=files)
-    def drop_file(self, file: FileRecord):
+    def drop_file(self, file: FileRecord) -> None:
         result = file.content.dataset.drop(file.name)
         if file.content.is_available:
             assert result[0]["status"] == "ok"
@@ -151,15 +158,15 @@ class DatasetActions(hst.RuleBasedStateMachine):
             assert result[0]["status"] == "notneeded"
 
     @hst.rule(file=files)
-    def get_file(self, file: FileRecord):
+    def get_file(self, file: FileRecord) -> None:
         result = file.content.dataset.get(file.name)
         if not file.content.is_available:
             assert result[0]["status"] == "ok"
-            self._set_content_available(file)
+            self._set_content_available(file.content)
         else:
             assert result[0]["status"] == "notneeded"
 
-    def _file_is_in_consistent_state(self, file: FileRecord):
+    def _file_is_in_consistent_state(self, file: FileRecord) -> None:
         filepath = file.content.dataset.pathobj / file.name
         assert filepath.is_symlink(), "'{}' is expected to be a symlink".format(
             filepath
@@ -177,7 +184,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
             )
 
     @hst.invariant()
-    def consistent_state(self):
+    def consistent_state(self) -> None:
         for e in self.files:
             self._file_is_in_consistent_state(e)
 
