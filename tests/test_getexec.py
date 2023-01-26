@@ -10,6 +10,7 @@ from typing import List, Optional
 import datalad.api as da
 import datalad.distribution.dataset as ddd
 import datalad.runner.exception
+import hypothesis as h
 import hypothesis.stateful as hst
 import hypothesis.strategies as hs
 import pytest
@@ -99,6 +100,8 @@ class DatasetActions(hst.RuleBasedStateMachine):
         depends_on=hs.lists(files),
     )
     def add_getexec_file(self, dataset, uuid, content, message, depends_on):
+        if isinstance(message, str):
+            h.assume("\0" not in message)
         filename = str(uuid)
         depends_on_filenames = list(
             map(
