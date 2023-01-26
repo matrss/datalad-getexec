@@ -114,12 +114,10 @@ class DatasetActions(hst.RuleBasedStateMachine):
             "-c",
             "printf 'output on stdout'; ({} printf '{}') > \"$1\"".format(
                 "; ".join(list(map(lambda x: "cat " + x, depends_on_filenames)) + [""]),
-                content
+                content,
             )
             if depends_on
-            else "printf 'output on stdout'; printf '{}' > \"$1\"".format(
-                content
-            ),
+            else "printf 'output on stdout'; printf '{}' > \"$1\"".format(content),
             "test",
         ]
         dataset.getexec(
