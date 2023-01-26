@@ -2,12 +2,11 @@
 
 __docformat__ = "restructuredtext"
 
-import base64
 import json
 import logging
-import urllib.parse
 from typing import List, Literal, Optional
 
+import utils
 from datalad.distribution.dataset import (
     Dataset,
     EnsureDataset,
@@ -99,10 +98,7 @@ class GetExec(Interface):
             "cmd": cmd,
         }
         logger.debug("spec is %s", spec)
-        json_spec = json.dumps(spec, separators=(",", ":"))
-        url = "getexec:v1-" + urllib.parse.quote(
-            base64.urlsafe_b64encode(json_spec.encode("utf-8"))
-        )
+        url = utils.spec_to_url(spec)
         logger.debug("url is %s", url)
 
         pathobj = ds.pathobj / path

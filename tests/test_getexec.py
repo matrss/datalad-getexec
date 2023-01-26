@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import tempfile
-from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -58,16 +57,22 @@ def test_invalid_command_raises_remote_error(dataset):
 @dataclass
 class FileRecord:
     name: str
-    dataset: ddd.Dataset
+    content: ContentRecord
+
+
+@dataclass
+class ContentRecord:
     content: bytes
+    dataset: ddd.Dataset
     dependencies: Optional[List[FileRecord]] = None
+    is_available: bool = True
 
 
 class DatasetActions(hst.RuleBasedStateMachine):
     def __init__(self):
         super().__init__()
         self.files = []
-        self.content_is_available = defaultdict(dict)
+        self.content_records = {}
 
     # TODO: somehow test getexec in subdatasets
     datasets: hst.Bundle = hst.Bundle("datasets")
@@ -79,17 +84,18 @@ class DatasetActions(hst.RuleBasedStateMachine):
         dataset = ddd.Dataset(dataset_path)
         dataset.create()
         self.root_dataset = dataset
+        self.content_records[dataset] = {}
         return dataset
 
     def teardown(self):
         self.root_dataset.remove(reckless="kill")
 
-    def _set_content_available(self, file):
-        if not self.content_is_available.get(file.dataset, {}).get(file.content, False):
-            self.content_is_available[file.dataset][file.content] = True
-            if file.dependencies is not None:
-                for e in file.dependencies:
-                    self._set_content_available(e)
+    def _set_content_available(self, content_record):
+        if not content_record.is_available:
+            content_record.is_available = True
+            if content_record.dependencies is not None:
+                for dependency in content_record.dependencies:
+                    self._set_content_available(dependency.content)
 
     @hst.rule(
         target=files,
@@ -107,13 +113,14 @@ class DatasetActions(hst.RuleBasedStateMachine):
             map(
                 str,
                 map(
-                    lambda x: (x.dataset.pathobj / x.name).relative_to(dataset.pathobj),
+                    lambda x: (x.content.dataset.pathobj / x.name).relative_to(
+                        dataset.pathobj
+                    ),
                     depends_on,
                 ),
             )
         )
         write_bytes_path = Path(__file__).parent / "resources/write_bytes.py"
-        print(write_bytes_path)
         cmd = [str(write_bytes_path), repr(content)]
         dataset.getexec(
             cmd,
@@ -122,47 +129,49 @@ class DatasetActions(hst.RuleBasedStateMachine):
             message=message,
         )
         content = (dataset.pathobj / filename).read_bytes()
-        file_record = FileRecord(
-            filename, dataset, content, depends_on if depends_on else None
+        content_record = self.content_records.get(dataset, {}).get(
+            content, ContentRecord(content, dataset, depends_on or None)
         )
+        self.content_records[dataset][content] = content_record
+        file_record = FileRecord(filename, content_record)
         self.files.append(file_record)
-        if file_record.dependencies is not None:
-            for dependency in file_record.dependencies:
-                self._set_content_available(dependency)
-        self._set_content_available(file_record)
+        if content_record.dependencies is not None:
+            for dependency in content_record.dependencies:
+                self._set_content_available(dependency.content)
+        self._set_content_available(content_record)
         return file_record
 
     @hst.rule(file=files)
     def drop_file(self, file: FileRecord):
-        result = file.dataset.drop(file.name)
-        if self.content_is_available[file.dataset][file.content]:
+        result = file.content.dataset.drop(file.name)
+        if file.content.is_available:
             assert result[0]["status"] == "ok"
-            self.content_is_available[file.dataset][file.content] = False
+            file.content.is_available = False
         else:
             assert result[0]["status"] == "notneeded"
 
     @hst.rule(file=files)
     def get_file(self, file: FileRecord):
-        result = file.dataset.get(file.name)
-        if not self.content_is_available[file.dataset][file.content]:
+        result = file.content.dataset.get(file.name)
+        if not file.content.is_available:
             assert result[0]["status"] == "ok"
             self._set_content_available(file)
         else:
             assert result[0]["status"] == "notneeded"
 
-    def _file_is_in_consistent_state(self, file):
-        filepath = file.dataset.pathobj / file.name
+    def _file_is_in_consistent_state(self, file: FileRecord):
+        filepath = file.content.dataset.pathobj / file.name
         assert filepath.is_symlink(), "'{}' is expected to be a symlink".format(
             filepath
         )
         assert (
-            filepath.exists() == self.content_is_available[file.dataset][file.content]
+            filepath.exists() == file.content.is_available
         ), "'{}' is expected to exist if and only if it's content '{}' is available".format(
             filepath, file.content
         )
-        if self.content_is_available[file.dataset][file.content]:
+        if file.content.is_available:
             assert (
-                filepath.read_bytes() == file.content
+                filepath.read_bytes() == file.content.content
             ), "'{}' is expected to contain the content '{}'".format(
                 filepath, file.content
             )

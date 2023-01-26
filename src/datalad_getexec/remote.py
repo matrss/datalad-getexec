@@ -1,32 +1,13 @@
-import base64
 import inspect
-import json
 import logging
 import subprocess
-import sys
-import urllib.parse
 
+import utils
 from annexremote import Master, RemoteError, SpecialRemote
 
 logger = logging.getLogger("datalad.getexec.remote")
 
 GETEXEC_REMOTE_UUID = "1da43985-0b3e-4123-89f0-90b88021ed34"
-
-
-def removeprefix(s: str, prefix: str) -> str:
-    if sys.version_info >= (3, 9):
-        return s.removeprefix(prefix)
-    if s.startswith(prefix):
-        return s[len(prefix) :]
-    return s
-
-
-def removesuffix(s: str, suffix: str) -> str:
-    if sys.version_info >= (3, 9):
-        return s.removesuffix(suffix)
-    if s.endswith(suffix):
-        return s[: -len(suffix)]
-    return s
 
 
 class HandleUrlError(Exception):
@@ -64,44 +45,37 @@ class GetExecRemote(SpecialRemote):
                 raise RemoteError("Failed to execute {}".format(cmd))
 
         def _handle_url(url):
-            if url.startswith("v1-"):
-                spec = json.loads(
-                    base64.urlsafe_b64decode(
-                        urllib.parse.unquote(removeprefix(url, "v1-")).encode("utf-8")
+            spec = utils.url_to_spec(url)
+
+            inputs = spec["inputs"]
+            if inputs:
+                import datalad.api as da
+                from datalad.utils import swallow_outputs
+
+                for e in inputs:
+                    result = subprocess.run(
+                        ["git", "annex", "lookupkey", e], capture_output=True
                     )
-                )
+                    input_key = utils.removesuffix(result.stdout.decode("utf-8"), "\n")
+                    if result.returncode == 0 and input_key == key:
+                        raise HandleUrlError("Circular dependency found")
 
-                inputs = spec["inputs"]
-                if inputs:
-                    import datalad.api as da
-                    from datalad.utils import swallow_outputs
+                with swallow_outputs() as cm:
+                    logger.info("fetching inputs: %s", inputs)
+                    # NOTE: this might be more efficient if we collect transitive
+                    # dependencies and aggregate them in one get call
+                    da.get(inputs)
+                    logger.info("datalad get output: %s", cm.out)
 
-                    for e in inputs:
-                        result = subprocess.run(
-                            ["git", "annex", "lookupkey", e], capture_output=True
-                        )
-                        input_key = removesuffix(result.stdout.decode("utf-8"), "\n")
-                        if result.returncode == 0 and input_key == key:
-                            raise HandleUrlError("Circular dependency found")
-
-                    with swallow_outputs() as cm:
-                        logger.info("fetching inputs: %s", inputs)
-                        # NOTE: this might be more efficient if we collect transitive
-                        # dependencies and aggregate them in one get call
-                        da.get(inputs)
-                        logger.info("datalad get output: %s", cm.out)
-
-                cmd = spec["cmd"]
-                cmd.append(filename)
-                _execute_cmd(cmd)
-            else:
-                raise HandleUrlError("Unsupported URL")
+            cmd = spec["cmd"]
+            cmd.append(filename)
+            _execute_cmd(cmd)
 
         urls = self.annex.geturls(key, "getexec:")
         logger.debug("urls for this key: %s", urls)
 
         for url in urls:
-            url = removeprefix(url, "getexec:")
+            url = utils.removeprefix(url, "getexec:")
             try:
                 _handle_url(url)
                 break
