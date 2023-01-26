@@ -89,7 +89,6 @@ class DatasetActions(hst.RuleBasedStateMachine):
                 for e in file.dependencies:
                     self._set_content_available(e)
 
-    # NOTE: null byte intentionally removed, behaves weird
     @hst.rule(
         target=files,
         dataset=datasets,
