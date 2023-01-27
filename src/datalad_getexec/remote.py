@@ -1,6 +1,7 @@
 import inspect
 import logging
 import subprocess
+from typing import List
 
 from annexremote import Master, RemoteError, SpecialRemote
 
@@ -38,7 +39,7 @@ class GetExecRemote(SpecialRemote):
             filename,
         )
 
-        def _execute_cmd(cmd):
+        def _execute_cmd(cmd: List[str]) -> None:
             logger.debug("executing %s", cmd)
             self.annex.info("executing {}".format(cmd))
             result = subprocess.run(cmd, stdout=subprocess.PIPE)
@@ -46,7 +47,7 @@ class GetExecRemote(SpecialRemote):
             if result.returncode != 0:
                 raise RemoteError("Failed to execute {}".format(cmd))
 
-        def _handle_url(url):
+        def _handle_url(url: str) -> None:
             spec = Spec.from_url(url)
 
             inputs = spec.inputs
@@ -96,7 +97,7 @@ class GetExecRemote(SpecialRemote):
         return url.startswith("getexec:")
 
 
-def main():
+def main() -> None:
     master = Master()
     remote = GetExecRemote(master)
     master.LinkRemote(remote)

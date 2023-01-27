@@ -4,7 +4,7 @@ __docformat__ = "restructuredtext"
 
 import json
 import logging
-from typing import List, Literal, Optional
+from typing import Dict, Iterable, List, Literal, Optional
 
 from datalad.distribution.dataset import (
     Dataset,
@@ -87,7 +87,7 @@ class GetExec(Interface):
         dataset: Optional[Dataset] = None,
         inputs: Optional[List[str]] = None,
         message: Optional[str] = None,
-    ):
+    ) -> Iterable[Dict]:
         ds = require_dataset(
             dataset, check_installed=True, purpose="execute and register a command"
         )

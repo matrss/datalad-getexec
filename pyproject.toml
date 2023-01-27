@@ -22,10 +22,32 @@ extend_skip = [
 
 [tool.mypy]
 ignore_missing_imports = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
 exclude = [
   '.tox/',
   'build/',
+  '_datalad_buildsupport/',
+  'datalad_getexec/_version.py',
+  'versioneer.py',
 ]
+
+[[tool.mypy.overrides]]
+module = [
+  "setup",
+  "datalad_getexec",
+]
+disallow_untyped_calls = false
+
+[[tool.mypy.overrides]]
+module = [
+  "datalad_getexec._version",
+  "versioneer",
+  "_datalad_buildsupport.*",
+]
+disallow_untyped_calls = false
+disallow_untyped_defs = false
 
 # [tool.flake8]
 # flake8 still does not support pyproject.toml, so it's configured in .flake8

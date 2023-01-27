@@ -4,7 +4,7 @@ import tempfile
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Iterable, Iterator, List, Optional
 
 import datalad.api as da
 import datalad.distribution.dataset as ddd
@@ -18,13 +18,13 @@ import datalad_getexec.remote
 
 
 @pytest.fixture()
-def dataset():
+def dataset() -> Iterable[ddd.Dataset]:
     with generate_dataset() as dataset:
         yield dataset
 
 
 @contextmanager
-def generate_dataset():
+def generate_dataset() -> Iterator[ddd.Dataset]:
     try:
         path = da.create_test_dataset(spec="")[0]
         ds = ddd.Dataset(path)
