@@ -141,10 +141,9 @@ class DatasetActions(hst.RuleBasedStateMachine):
         self.content_records[dataset][content] = content_record
         file_record = FileRecord(filename, content_record)
         self.files.append(file_record)
-        if content_record.dependencies is not None:
-            for dependency in content_record.dependencies:
-                self._set_content_available(dependency.content)
-        self._set_content_available(content_record)
+        for dependency in depends_on:
+            self._set_content_available(dependency.content)
+        self.content_records[dataset][content].is_available = True
         return file_record
 
     @hst.rule(file=files)
