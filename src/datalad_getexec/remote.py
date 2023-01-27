@@ -5,6 +5,7 @@ import subprocess
 from annexremote import Master, RemoteError, SpecialRemote
 
 from datalad_getexec import utils
+from datalad_getexec.spec import Spec
 
 logger = logging.getLogger("datalad.getexec.remote")
 
@@ -46,9 +47,9 @@ class GetExecRemote(SpecialRemote):
                 raise RemoteError("Failed to execute {}".format(cmd))
 
         def _handle_url(url):
-            spec = utils.url_to_spec(url)
+            spec = Spec.from_url(url)
 
-            inputs = spec["inputs"]
+            inputs = spec.inputs
             if inputs:
                 import datalad.api as da
                 from datalad.utils import swallow_outputs
@@ -68,7 +69,7 @@ class GetExecRemote(SpecialRemote):
                     da.get(inputs)
                     logger.info("datalad get output: %s", cm.out)
 
-            cmd = spec["cmd"]
+            cmd = spec.cmd
             cmd.append(filename)
             _execute_cmd(cmd)
 
@@ -76,7 +77,6 @@ class GetExecRemote(SpecialRemote):
         logger.debug("urls for this key: %s", urls)
 
         for url in urls:
-            url = utils.removeprefix(url, "getexec:")
             try:
                 _handle_url(url)
                 break

@@ -19,7 +19,7 @@ from datalad.support.constraints import EnsureNone, EnsureStr
 from datalad.support.param import Parameter
 
 import datalad_getexec.remote
-from datalad_getexec import utils
+from datalad_getexec.spec import Spec
 
 logger = logging.getLogger("datalad.getexec.getexec")
 
@@ -82,7 +82,7 @@ class GetExec(Interface):
     @datasetmethod(name="getexec")
     @eval_results
     def __call__(
-        cmd: str,
+        cmd: List[str],
         path: str,
         dataset: Optional[Dataset] = None,
         inputs: Optional[List[str]] = None,
@@ -93,12 +93,9 @@ class GetExec(Interface):
         )
         if inputs is None:
             inputs = []
-        spec = {
-            "inputs": inputs,
-            "cmd": cmd,
-        }
+        spec = Spec(cmd, inputs)
         logger.debug("spec is %s", spec)
-        url = utils.spec_to_url(spec)
+        url = spec.to_url()
         logger.debug("url is %s", url)
 
         pathobj = ds.pathobj / path
@@ -113,13 +110,13 @@ class GetExec(Interface):
 {}
 ^^^ Do not change lines above ^^^
         """
-        cmd_message_full = "'" + "' '".join(spec["cmd"]) + "'"
+        cmd_message_full = "'" + "' '".join(spec.cmd) + "'"
         cmd_message = (
             cmd_message_full
             if len(cmd_message_full) <= 40
             else cmd_message_full[:40] + " ..."
         )
-        record = json.dumps(spec, indent=1, sort_keys=True)
+        record = json.dumps(spec.to_dict(), indent=1, sort_keys=True)
         msg = msg.format(
             message if message is not None else cmd_message,
             record,
