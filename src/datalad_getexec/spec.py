@@ -19,16 +19,18 @@ class Spec:
         return cls(**dict)
 
     @classmethod
+    def from_json(cls, s: str) -> Spec:
+        return cls.from_dict(json.loads(s))
+
+    @classmethod
     def from_url(cls, url: str) -> Spec:
         if url.startswith("getexec:v1-"):
-            spec = cls.from_dict(
-                json.loads(
-                    base64.urlsafe_b64decode(
-                        urllib.parse.unquote(
-                            utils.removeprefix(url, "getexec:v1-")
-                        ).encode("utf-8")
+            spec = cls.from_json(
+                base64.urlsafe_b64decode(
+                    urllib.parse.unquote(utils.removeprefix(url, "getexec:v1-")).encode(
+                        "utf-8"
                     )
-                )
+                ).decode("utf-8")
             )
             return spec
         raise ValueError("unsupported URL value encountered")
@@ -36,8 +38,11 @@ class Spec:
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict(), separators=(",", ":"))
+
     def to_url(self) -> str:
-        json_spec = json.dumps(self.to_dict(), separators=(",", ":"))
+        json_spec = self.to_json()
         url = "getexec:v1-" + urllib.parse.quote(
             base64.urlsafe_b64encode(json_spec.encode("utf-8"))
         )
