@@ -113,6 +113,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
         content: bytes,
         message: Optional[str],
     ) -> FileRecord:
+        h.assume(content not in self.content_records[dataset].keys())
         if isinstance(message, str):
             h.assume("\0" not in message)
         depends_on_filenames = list(
