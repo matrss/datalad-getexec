@@ -1,5 +1,7 @@
 # DataLad getexec extension
 
+[![check](https://github.com/matrss/datalad-getexec/actions/workflows/check.yml/badge.svg)](https://github.com/matrss/datalad-getexec/actions/workflows/check.yml)
+
 CAUTION: Work-in-Progress!
 
 This DataLad extension provides facilities to register arbitrary commands for files in git-annex,
