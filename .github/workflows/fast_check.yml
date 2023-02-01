@@ -1,4 +1,4 @@
-name: tox fast
+name: fast check
 
 on:
   push:

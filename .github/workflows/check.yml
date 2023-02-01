@@ -1,4 +1,4 @@
-name: tox ci
+name: check
 
 on:
   workflow_dispatch:
