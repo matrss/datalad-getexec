@@ -1,6 +1,7 @@
 # DataLad getexec extension
 
 [![check](https://github.com/matrss/datalad-getexec/actions/workflows/check.yml/badge.svg)](https://github.com/matrss/datalad-getexec/actions/workflows/check.yml)
+[![codecov](https://codecov.io/gh/matrss/datalad-getexec/branch/main/graph/badge.svg?token=W8PMJRM66H)](https://codecov.io/gh/matrss/datalad-getexec)
 
 CAUTION: Work-in-Progress!
 
