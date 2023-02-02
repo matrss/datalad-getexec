@@ -6,7 +6,7 @@ import urllib.parse
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, List, Optional
 
-from datalad_getexec import utils
+from datalad_getexec import compat
 
 
 @dataclass
@@ -27,9 +27,9 @@ class Spec:
         if url.startswith("getexec:v1-"):
             spec = cls.from_json(
                 base64.urlsafe_b64decode(
-                    urllib.parse.unquote(utils.removeprefix(url, "getexec:v1-")).encode(
-                        "utf-8"
-                    )
+                    urllib.parse.unquote(
+                        compat.removeprefix(url, "getexec:v1-")
+                    ).encode("utf-8")
                 ).decode("utf-8")
             )
             return spec
