@@ -1,0 +1,8 @@
+[coverage:run]
+plugins =
+  coverage_conditional_plugin
+
+[coverage:coverage_conditional_plugin]
+rules =
+  "sys_version_info >= (3, 9)": py-gte-39
+  "sys_version_info < (3, 9)": py-lt-39

@@ -3,6 +3,7 @@ pytest
 pytest-cov
 hypothesis
 coverage
+coverage-conditional-plugin
 sphinx
 sphinx_rtd_theme
 black
