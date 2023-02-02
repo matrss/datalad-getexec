@@ -1,8 +1,14 @@
-DataLad extension template
-**************************
+DataLad getexec extension
+*************************
 
-This is a template for creating a `DataLad <http://datalad.org>`__ extension
-that equips DataLad with additional functionality.
+This extension adds a new command called "getexec" which can be used to
+register a command which should be executed on "get". This way it is possible
+to programmatically create files when "get"ing them, transparently.
+
+This functionality is achieved by using a git-annex special remote which
+executes the registered command when retrieving data from it. The command
+itself and it's dependencies are encoded in an URL with a custom scheme, which
+is then associated with the generated file.
 
 
 API

@@ -26,10 +26,38 @@ logger = logging.getLogger("datalad.getexec.getexec")
 
 @build_doc
 class GetExec(Interface):
-    """Short description of the command
+    """Get a file by executing a command and register the command for future retrievals
 
-    Long description of arbitrary volume.
+    The command consists of a list of strings which are passed as is to
+    python's "subprocess.run". No shell interpretation takes place, if you want
+    that you need to execute a shell yourself. In the invocation a last
+    argument naming the output file the command should write to is added.
+    Therefore your command should expect a single argument which specifies it's
+    output path.
     """
+
+    _examples_ = [
+        dict(
+            text="Run an executable script and register it for an output file",
+            code_py='getexec(["code/script.sh"], path="output.txt")',
+            code_cmd="datalad getexec --path output.txt 'code/script.sh'",
+        ),
+        dict(
+            text="Use bash and specify the full command",
+            code_py='getexec(["bash", "-c", \'printf "Hello World!" > "$1"\', '
+            '"test-cmd"], path="output.txt")',
+            code_cmd="datalad getexec --path test.txt -- 'bash' '-c' 'printf "
+            '"Hello World!" > "$1"\' \'test-cmd\'',
+        ),
+        dict(
+            text="Run an executable script which depends on other files and register "
+            "it for an output file",
+            code_py='getexec(["code/script.sh", "input1.txt", "input2.txt"], '
+            'path="output.txt", inputs=["input1.txt", "input2.txt"])',
+            code_cmd="datalad getexec --path output.txt --input input1.txt -i "
+            "input2.txt -- 'code/script.sh' input1.txt input2.txt",
+        ),
+    ]
 
     _params_ = dict(
         cmd=Parameter(
