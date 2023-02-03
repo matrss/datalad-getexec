@@ -1,1 +1,1 @@
-datalad_getexec/_version.py export-subst
+src/datalad_getexec/_version.py export-subst
