@@ -2,6 +2,7 @@
 
 [![check](https://github.com/matrss/datalad-getexec/actions/workflows/check.yml/badge.svg)](https://github.com/matrss/datalad-getexec/actions/workflows/check.yml)
 [![codecov](https://codecov.io/gh/matrss/datalad-getexec/branch/main/graph/badge.svg?token=W8PMJRM66H)](https://codecov.io/gh/matrss/datalad-getexec)
+[![docs](https://readthedocs.org/projects/datalad-getexec/badge/?version=latest)](https://datalad-getexec.readthedocs.io/en/latest/?badge=latest)
 
 CAUTION: Work-in-Progress!
 
