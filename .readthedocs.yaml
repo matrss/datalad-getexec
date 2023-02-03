@@ -6,8 +6,10 @@ build:
     python: "3.11"
 
 sphinx:
-  configuration: docs/conf.py
+  configuration: docs/source/conf.py
 
 python:
   install:
+    - path: .
+      method: pip
     - requirements: requirements-devel.txt
