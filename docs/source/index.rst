@@ -1,5 +1,5 @@
-DataLad getexec extension
-*************************
+DataLad extension for code execution in get commands
+****************************************************
 
 This extension adds a new command called "getexec" which can be used to
 register a command which should be executed on "get". This way it is possible
