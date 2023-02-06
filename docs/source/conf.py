@@ -91,7 +91,9 @@ master_doc = "index"
 
 # General information about the project.
 project = "DataLad extension for code execution in get commands"
-copyright = "2018-{}, Matthias Riße, the DataLad team and contributors".format(datetime.datetime.now().year)
+copyright = "2018-{}, Matthias Riße, the DataLad team and contributors".format(
+    datetime.datetime.now().year
+)
 author = "Matthias Riße"
 
 # The version info for the project you're documenting, acts as replacement for
