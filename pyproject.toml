@@ -1,5 +1,75 @@
+[project]
+name = "datalad-getexec"
+description = "DataLad extension for code execution in get commands"
+requires-python = ">=3.8"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+  { name = "The DataLad Team and Contributors", email = "team@datalad.org" },
+  { name = "Matthias Riße", email = "m.risse@fz-juelich.de" },
+]
+maintainers = [
+  { name = "Matthias Riße", email = "m.risse@fz-juelich.de" },
+]
+classifiers = [
+  "Programming Language :: Python",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+]
+dynamic = ["version"]
+
+dependencies = [
+  "datalad>=0.17.0",
+  "annexremote>=1.6.0",
+]
+
+[project.optional-dependencies]
+devel = [
+  "black",
+  "coverage",
+  "coverage-conditional-plugin",
+  "flake8",
+  "flake8-bugbear",
+  "hypothesis",
+  "isort",
+  "mypy",
+  "pytest",
+  "pytest-cov",
+  "sphinx",
+  "sphinx_rtd_theme",
+]
+
+[project.urls]
+documentation = "https://datalad-getexec.readthedocs.io"
+repository = "https://github.com/matrss/datalad-getexec"
+
+[project.scripts]
+git-annex-remote-getexec = "datalad_getexec.remote:main"
+
+[project.entry-points."datalad.extensions"]
+getexec = "datalad_getexec:command_suite"
+
 [build-system]
-requires = ["setuptools >= 43.0.0", "wheel"]
+requires = ["setuptools >= 43.0.0", "tomli; python_version < '3.11'"]
+build-backend = "setuptools.build_meta"
+
+[tool.versioneer]
+VCS = "git"
+style = "pep440"
+versionfile_source = "src/datalad_getexec/_version.py"
+versionfile_build = "datalad_getexec/_version.py"
+tag_prefix = "v"
+
+[tool.coverage.run]
+plugins = ["coverage_conditional_plugin"]
+
+[tool.coverage.report]
+show_missing = true
+omit = ["src/datalad_getexec/_version.py"]
+
+[tool.coverage.coverage_conditional_plugin.rules]
+py-gte-39 = "sys_version_info >= (3, 9)"
+py-lt-39 = "sys_version_info < (3, 9)"
 
 [tool.black]
 line-length = 88
@@ -46,8 +116,7 @@ module = [
   "versioneer",
   "_datalad_buildsupport.*",
 ]
-disallow_untyped_calls = false
-disallow_untyped_defs = false
+follow_imports = "skip"
 
 # [tool.flake8]
 # flake8 still does not support pyproject.toml, so it's configured in .flake8
