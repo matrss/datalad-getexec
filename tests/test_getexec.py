@@ -71,8 +71,8 @@ class ContentRecord:
 class DatasetActions(hst.RuleBasedStateMachine):
     def __init__(self) -> None:
         super().__init__()
-        self.files = []
-        self.content_records: Dict[ddd.Dataset, Dict[bytes, ContentRecord]] = {}
+        self._files: List[FileRecord] = []
+        self._content_records: Dict[ddd.Dataset, Dict[bytes, ContentRecord]] = {}
 
     # TODO: somehow test getexec in subdatasets
     datasets: hst.Bundle = hst.Bundle("datasets")
@@ -84,7 +84,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
         dataset = ddd.Dataset(dataset_path)
         dataset.create()
         self.root_dataset = dataset
-        self.content_records[dataset] = {}
+        self._content_records[dataset] = {}
         return dataset
 
     def teardown(self) -> None:
@@ -113,7 +113,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
         content: bytes,
         message: Optional[str],
     ) -> FileRecord:
-        h.assume(content not in self.content_records[dataset].keys())
+        h.assume(content not in self._content_records[dataset].keys())
         if isinstance(message, str):
             h.assume("\0" not in message)
         depends_on_filenames = list(
@@ -136,15 +136,15 @@ class DatasetActions(hst.RuleBasedStateMachine):
             message=message,
         )
         content = (dataset.pathobj / filename).read_bytes()
-        content_record = self.content_records.get(dataset, {}).get(
+        content_record = self._content_records.get(dataset, {}).get(
             content, ContentRecord(content, dataset, depends_on or None)
         )
-        self.content_records[dataset][content] = content_record
+        self._content_records[dataset][content] = content_record
         file_record = FileRecord(filename, content_record)
-        self.files.append(file_record)
+        self._files.append(file_record)
         for dependency in depends_on:
             self._set_content_available(dependency.content)
-        self.content_records[dataset][content].is_available = True
+        self._content_records[dataset][content].is_available = True
         return file_record
 
     @hst.rule(file=files)
@@ -184,7 +184,7 @@ class DatasetActions(hst.RuleBasedStateMachine):
 
     @hst.invariant()
     def consistent_state(self) -> None:
-        for e in self.files:
+        for e in self._files:
             self._file_is_in_consistent_state(e)
 
 
