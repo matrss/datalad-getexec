@@ -10,7 +10,7 @@ cmdclass.update(build_manpage=BuildManPage)
 
 if __name__ == "__main__":
     setup(
-        name="datalad_getexec",
+        name="datalad-getexec",
         version=versioneer.get_version(),
         cmdclass=cmdclass,
     )
