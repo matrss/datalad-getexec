@@ -12,4 +12,5 @@ python:
   install:
     - path: .
       method: pip
-    - requirements: requirements-devel.txt
+      extra_requirements:
+        - devel
