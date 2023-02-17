@@ -24,9 +24,7 @@ jobs:
       - name: Install git-annex
         run: |
           python -m pip install datalad-installer
-          datalad-installer --sudo ok -E new.env git-annex
-          . new.env
-          echo "PATH=$PATH" >> "$GITHUB_ENV"
+          datalad-installer --sudo ok git-annex
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
