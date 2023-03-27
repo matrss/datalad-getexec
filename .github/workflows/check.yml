@@ -27,7 +27,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install tox datalad
-      - uses: webfactory/ssh-agent@v0.7.0
+      - uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.HYPOTHESIS_EXAMPLE_DB_REPO_KEY }}
       - name: Fetch hypothesis example database
