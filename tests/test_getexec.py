@@ -4,7 +4,7 @@ import tempfile
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, List, Optional
+from typing import Dict, Iterator, List, Optional
 
 import datalad.api as da
 import datalad.distribution.dataset as ddd
@@ -18,21 +18,23 @@ import datalad_getexec.remote
 
 
 @pytest.fixture()
-def dataset() -> Iterable[ddd.Dataset]:
-    with generate_dataset() as dataset:
-        yield dataset
+def dataset() -> Iterator[ddd.Dataset]:
+    with generate_datasets() as datasets:
+        yield datasets[0]
 
 
 @contextmanager
-def generate_dataset() -> Iterator[ddd.Dataset]:
+def generate_datasets(spec="") -> Iterator[List[ddd.Dataset]]:
     try:
-        path = da.create_test_dataset(spec="")[0]
-        ds = ddd.Dataset(path)
-        ds.create(force=True)
-        yield ds
+        paths = da.create_test_dataset(spec=spec)
+        datasets = [ddd.Dataset(path) for path in paths]
+        for dataset in datasets:
+            dataset.create(force=True)
+        yield datasets
     finally:
         # cleanup
-        ds.remove(reckless="kill")
+        # datasets[0].remove(reckless="kill")
+        pass
 
 
 def test_remote_is_initialized(dataset: ddd.Dataset) -> None:
@@ -52,6 +54,36 @@ def test_remote_is_initialized(dataset: ddd.Dataset) -> None:
 def test_invalid_command_raises_remote_error(dataset: ddd.Dataset) -> None:
     with pytest.raises(datalad.runner.exception.CommandError):
         dataset.getexec(["false"], path="test.txt")
+
+
+def test_getexec_with_subdataset_gets_input(dataset: ddd.Dataset) -> None:
+    subds = ddd.Dataset(dataset.pathobj / "subds")
+    subds.create()
+    dataset.save()
+    subds.getexec(
+        [
+            "bash",
+            "-c",
+            'printf "output on stdout"; printf "test\n" > "$1"',
+            "test",
+        ],
+        path="test.txt",
+    )
+    dataset.save()
+    subds.drop("test.txt")
+    assert not (subds.pathobj / "test.txt").exists(), "Dropping a file in the sub-dataset failed"
+    dataset.getexec(
+        [
+            "bash",
+            "-c",
+            'printf "output on stdout"; cat subds/test.txt > "$1"; printf "some more\n" >> "$1"',
+            "test",
+        ],
+        inputs=["subds/test.txt"],
+        path="dependent.txt",
+    )
+    assert (subds.pathobj / "test.txt").exists(), "A file in the sub-dataset was not recreated"
+    assert (dataset.pathobj / "dependent.txt").read_text() == "test\nsome more\n"
 
 
 @dataclass
